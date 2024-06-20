@@ -1,17 +1,18 @@
 package com.bzu.project.service;
 
 import com.bzu.project.dto.RoomDTO;
+import com.bzu.project.exception.ResourceNotFoundException;
 import com.bzu.project.model.Room;
 import com.bzu.project.repository.FloorRepository;
 import com.bzu.project.repository.RoomClassRepository;
 import com.bzu.project.repository.RoomRepository;
 import com.bzu.project.repository.RoomStatusRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class RoomService {
@@ -28,36 +29,34 @@ public class RoomService {
     @Autowired
     private RoomStatusRepository roomStatusRepository;
 
-    public List<RoomDTO> getAllRooms() {
-        return roomRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<Room> getAllRooms(PageRequest pageRequest) {
+        return roomRepository.findAll(pageRequest);
     }
 
-    public RoomDTO getRoomById(Long id) {
-        Optional<Room> room = roomRepository.findById(id);
-        return room.map(this::convertToDTO).orElse(null);
+    public Room getRoomById(Long id) {
+        return roomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id " + id));
     }
 
-    public RoomDTO createRoom(RoomDTO roomDTO) {
+    public Room createRoom(RoomDTO roomDTO) {
         Room room = convertToEntity(roomDTO);
-        return convertToDTO(roomRepository.save(room));
+        return roomRepository.save(room);
     }
 
-    public RoomDTO updateRoom(Long id, RoomDTO roomDTO) {
-        Optional<Room> existingRoom = roomRepository.findById(id);
-        if (existingRoom.isPresent()) {
-            Room room = existingRoom.get();
-            room.setFloor(floorRepository.findById(roomDTO.getFloorId()).orElse(null));
-            room.setRoomClass(roomClassRepository.findById(roomDTO.getRoomClassId()).orElse(null));
-            room.setStatus(roomStatusRepository.findById(roomDTO.getStatusId()).orElse(null));
-            room.setRoomNumber(roomDTO.getRoomNumber());
-            return convertToDTO(roomRepository.save(room));
-        } else {
-            return null;
-        }
+    public Room updateRoom(Long id, RoomDTO roomDTO) {
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id " + id));
+        room.setFloor(floorRepository.findById(roomDTO.getFloorId()).orElse(null));
+        room.setRoomClass(roomClassRepository.findById(roomDTO.getRoomClassId()).orElse(null));
+        room.setStatus(roomStatusRepository.findById(roomDTO.getStatusId()).orElse(null));
+        room.setRoomNumber(roomDTO.getRoomNumber());
+        return roomRepository.save(room);
     }
 
     public void deleteRoom(Long id) {
-        roomRepository.deleteById(id);
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id " + id));
+        roomRepository.delete(room);
     }
 
     private Room convertToEntity(RoomDTO roomDTO) {

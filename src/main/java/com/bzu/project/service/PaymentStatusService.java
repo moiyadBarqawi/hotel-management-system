@@ -1,15 +1,13 @@
 package com.bzu.project.service;
 
-
 import com.bzu.project.dto.PaymentStatusDTO;
 import com.bzu.project.model.PaymentStatus;
 import com.bzu.project.repository.PaymentStatusRepository;
+import com.bzu.project.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class PaymentStatusService {
@@ -17,33 +15,31 @@ public class PaymentStatusService {
     @Autowired
     private PaymentStatusRepository paymentStatusRepository;
 
-    public List<PaymentStatusDTO> getAllPaymentStatuses() {
-        return paymentStatusRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<PaymentStatus> getAllPaymentStatuses(PageRequest pageRequest) {
+        return paymentStatusRepository.findAll(pageRequest);
     }
 
-    public PaymentStatusDTO getPaymentStatusById(Long id) {
-        Optional<PaymentStatus> paymentStatus = paymentStatusRepository.findById(id);
-        return paymentStatus.map(this::convertToDTO).orElse(null);
+    public PaymentStatus getPaymentStatusById(Long id) {
+        return paymentStatusRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment status not found with id " + id));
     }
 
-    public PaymentStatusDTO createPaymentStatus(PaymentStatusDTO paymentStatusDTO) {
+    public PaymentStatus createPaymentStatus(PaymentStatusDTO paymentStatusDTO) {
         PaymentStatus paymentStatus = convertToEntity(paymentStatusDTO);
-        return convertToDTO(paymentStatusRepository.save(paymentStatus));
+        return paymentStatusRepository.save(paymentStatus);
     }
 
-    public PaymentStatusDTO updatePaymentStatus(Long id, PaymentStatusDTO paymentStatusDTO) {
-        Optional<PaymentStatus> existingPaymentStatus = paymentStatusRepository.findById(id);
-        if (existingPaymentStatus.isPresent()) {
-            PaymentStatus paymentStatus = existingPaymentStatus.get();
-            paymentStatus.setPaymentStatusName(paymentStatusDTO.getPaymentStatusName());
-            return convertToDTO(paymentStatusRepository.save(paymentStatus));
-        } else {
-            return null;
-        }
+    public PaymentStatus updatePaymentStatus(Long id, PaymentStatusDTO paymentStatusDTO) {
+        PaymentStatus paymentStatus = paymentStatusRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment status not found with id " + id));
+        paymentStatus.setPaymentStatusName(paymentStatusDTO.getPaymentStatusName());
+        return paymentStatusRepository.save(paymentStatus);
     }
 
     public void deletePaymentStatus(Long id) {
-        paymentStatusRepository.deleteById(id);
+        PaymentStatus paymentStatus = paymentStatusRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment status not found with id " + id));
+        paymentStatusRepository.delete(paymentStatus);
     }
 
     private PaymentStatus convertToEntity(PaymentStatusDTO paymentStatusDTO) {

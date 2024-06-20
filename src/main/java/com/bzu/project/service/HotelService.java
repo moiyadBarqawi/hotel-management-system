@@ -1,13 +1,13 @@
 package com.bzu.project.service;
 
-
 import com.bzu.project.dto.HotelDTO;
+import com.bzu.project.exception.ResourceNotFoundException;
 import com.bzu.project.model.Hotel;
 import com.bzu.project.repository.HotelRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -15,13 +15,13 @@ public class HotelService {
 
     private final HotelRepository hotelRepository;
 
-    public List<Hotel> getAllHotels() {
-        return hotelRepository.findAll();
+    public Page<Hotel> getAllHotels(PageRequest pageRequest) {
+        return hotelRepository.findAll(pageRequest);
     }
 
     public Hotel getHotelById(Long id) {
         return hotelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with id " + id));
     }
 
     public Hotel createHotel(HotelDTO hotelDTO) {

@@ -1,28 +1,27 @@
 package com.bzu.project.service;
 
 import com.bzu.project.dto.FloorDTO;
+import com.bzu.project.exception.ResourceNotFoundException;
 import com.bzu.project.model.Floor;
 import com.bzu.project.repository.FloorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class FloorService {
-
     @Autowired
     private FloorRepository floorRepository;
 
-    public List<FloorDTO> getAllFloors() {
-        return floorRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<Floor> getAllFloors(PageRequest pageRequest) {
+        return floorRepository.findAll(pageRequest);
     }
 
     public FloorDTO getFloorById(Long id) {
-        Optional<Floor> floor = floorRepository.findById(id);
-        return floor.map(this::convertToDTO).orElse(null);
+        Floor floor = floorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Floor not found with id " + id));
+        return convertToDTO(floor);
     }
 
     public FloorDTO createFloor(FloorDTO floorDTO) {
@@ -31,14 +30,10 @@ public class FloorService {
     }
 
     public FloorDTO updateFloor(Long id, FloorDTO floorDTO) {
-        Optional<Floor> existingFloor = floorRepository.findById(id);
-        if (existingFloor.isPresent()) {
-            Floor floor = existingFloor.get();
-            floor.setFloorNumber(floorDTO.getFloorNumber());
-            return convertToDTO(floorRepository.save(floor));
-        } else {
-            return null;
-        }
+        Floor floor = floorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Floor not found with id " + id));
+        floor.setFloorNumber(floorDTO.getFloorNumber());
+        return convertToDTO(floorRepository.save(floor));
     }
 
     public void deleteFloor(Long id) {

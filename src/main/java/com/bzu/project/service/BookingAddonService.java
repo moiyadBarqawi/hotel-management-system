@@ -1,18 +1,17 @@
 package com.bzu.project.service;
 
 import com.bzu.project.dto.BookingAddonDTO;
-import com.bzu.project.model.Booking;
+import com.bzu.project.exception.ResourceNotFoundException;
 import com.bzu.project.model.BookingAddon;
-import com.bzu.project.model.Addon;
 import com.bzu.project.repository.AddonRepository;
 import com.bzu.project.repository.BookingAddonRepository;
 import com.bzu.project.repository.BookingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class BookingAddonService {
@@ -26,36 +25,34 @@ public class BookingAddonService {
     @Autowired
     private AddonRepository addonRepository;
 
-    public List<BookingAddonDTO> getAllBookingAddons() {
-        return bookingAddonRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<BookingAddonDTO> getAllBookingAddons(PageRequest pageRequest) {
+        Page<BookingAddon> bookingAddons = bookingAddonRepository.findAll(pageRequest);
+        return bookingAddons.map(this::convertToDTO);
     }
 
-    public BookingAddonDTO getBookingAddonById(Long id) {
-        Optional<BookingAddon> bookingAddon = bookingAddonRepository.findById(id);
-        return bookingAddon.map(this::convertToDTO).orElse(null);
+    public BookingAddonDTO getBookingAddonById(Long bookingId, Long addonId) {
+        BookingAddon bookingAddon = bookingAddonRepository.findByBookingIdAndAddonId(bookingId, addonId)
+                .orElseThrow(() -> new ResourceNotFoundException("BookingAddon not found with bookingId " + bookingId + " and addonId " + addonId));
+        return convertToDTO(bookingAddon);
     }
 
     public BookingAddonDTO createBookingAddon(BookingAddonDTO bookingAddonDTO) {
         BookingAddon bookingAddon = convertToEntity(bookingAddonDTO);
-        return convertToDTO(bookingAddonRepository.save(bookingAddon));
+        BookingAddon savedBookingAddon = bookingAddonRepository.save(bookingAddon);
+        return convertToDTO(savedBookingAddon);
     }
 
-    public BookingAddonDTO updateBookingAddon(Long id, BookingAddonDTO bookingAddonDTO) {
-        Optional<BookingAddon> existingBookingAddon = bookingAddonRepository.findById(id);
-        if (existingBookingAddon.isPresent()) {
-            BookingAddon bookingAddon = existingBookingAddon.get();
-            bookingAddon.setBooking(bookingRepository.findById(bookingAddonDTO.getBookingId()).orElse(null));
-            bookingAddon.setAddon(addonRepository.findById(bookingAddonDTO.getAddonId()).orElse(null));
-            return convertToDTO(bookingAddonRepository.save(bookingAddon));
-        } else {
-            return null;
-        }
+    public BookingAddonDTO updateBookingAddon(Long bookingId, Long addonId, BookingAddonDTO bookingAddonDTO) {
+        BookingAddon bookingAddon = bookingAddonRepository.findByBookingIdAndAddonId(bookingId, addonId)
+                .orElseThrow(() -> new ResourceNotFoundException("BookingAddon not found with bookingId " + bookingId + " and addonId " + addonId));
+        bookingAddon.setBooking(bookingRepository.findById(bookingAddonDTO.getBookingId()).orElse(null));
+        bookingAddon.setAddon(addonRepository.findById(bookingAddonDTO.getAddonId()).orElse(null));
+        BookingAddon updatedBookingAddon = bookingAddonRepository.save(bookingAddon);
+        return convertToDTO(updatedBookingAddon);
     }
 
-    public void deleteBookingAddon(Long id) {
-        bookingAddonRepository.deleteById(id);
+    public void deleteBookingAddon(Long bookingId, Long addonId) {
+        bookingAddonRepository.deleteByBookingIdAndAddonId(bookingId, addonId);
     }
 
     private BookingAddon convertToEntity(BookingAddonDTO bookingAddonDTO) {

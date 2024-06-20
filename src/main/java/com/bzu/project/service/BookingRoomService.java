@@ -1,67 +1,66 @@
 package com.bzu.project.service;
 
 import com.bzu.project.dto.BookingRoomDTO;
-import com.bzu.project.model.Booking;
+import com.bzu.project.exception.ResourceNotFoundException;
 import com.bzu.project.model.BookingRoom;
+import com.bzu.project.model.Booking;
 import com.bzu.project.model.Room;
 import com.bzu.project.repository.BookingRoomRepository;
+import com.bzu.project.repository.BookingRepository;
+import com.bzu.project.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class BookingRoomService {
 
     @Autowired
     private BookingRoomRepository bookingRoomRepository;
+    @Autowired
+    private BookingRepository bookingRepository;
+    @Autowired
+    private RoomRepository roomRepository;
 
-    public List<BookingRoomDTO> getAllBookingRooms() {
-        return bookingRoomRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<BookingRoom> getAllBookingRooms(PageRequest pageRequest) {
+        return bookingRoomRepository.findAll(pageRequest);
     }
 
-    public BookingRoomDTO getBookingRoomById(Long id) {
-        Optional<BookingRoom> bookingRoom = bookingRoomRepository.findById(id);
-        return bookingRoom.map(this::convertToDTO).orElse(null);
+    public BookingRoom getBookingRoomById(Long id) {
+        return bookingRoomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("BookingRoom not found with id " + id));
     }
 
-    public BookingRoomDTO createBookingRoom(BookingRoomDTO bookingRoomDTO) {
-        Booking booking = new Booking();
-        booking.setId(bookingRoomDTO.getBookingId()); // Assuming you have setId method in Booking entity
+    public BookingRoom createBookingRoom(BookingRoomDTO bookingRoomDTO) {
+        BookingRoom bookingRoom = convertToEntity(bookingRoomDTO);
+        return bookingRoomRepository.save(bookingRoom);
+    }
 
-        Room room = new Room();
-        room.setId(bookingRoomDTO.getRoomId()); // Assuming you have setId method in Room entity
+    public BookingRoom updateBookingRoom(Long id, BookingRoomDTO bookingRoomDTO) {
+        BookingRoom bookingRoom = bookingRoomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("BookingRoom not found with id " + id));
 
-        BookingRoom bookingRoom = new BookingRoom();
+        Booking booking = bookingRepository.findById(bookingRoomDTO.getBookingId())
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id " + bookingRoomDTO.getBookingId()));
+        Room room = roomRepository.findById(bookingRoomDTO.getRoomId())
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id " + bookingRoomDTO.getRoomId()));
+
         bookingRoom.setBooking(booking);
         bookingRoom.setRoom(room);
 
-        return convertToDTO(bookingRoomRepository.save(bookingRoom));
-    }
-
-    public BookingRoomDTO updateBookingRoom(Long id, BookingRoomDTO bookingRoomDTO) {
-        Optional<BookingRoom> existingBookingRoom = bookingRoomRepository.findById(id);
-        if (existingBookingRoom.isPresent()) {
-            BookingRoom bookingRoom = existingBookingRoom.get();
-            return convertToDTO(bookingRoomRepository.save(bookingRoom));
-        } else {
-            return null;
-        }
+        return bookingRoomRepository.save(bookingRoom);
     }
 
     public void deleteBookingRoom(Long id) {
         bookingRoomRepository.deleteById(id);
     }
 
-    private BookingRoomDTO convertToDTO(BookingRoom bookingRoom) {
-        BookingRoomDTO bookingRoomDTO = new BookingRoomDTO();
-        bookingRoomDTO.setId(bookingRoom.getId());
-        bookingRoomDTO.setBookingId(bookingRoom.getBooking().getId());
-        bookingRoomDTO.setRoomId(bookingRoom.getRoom().getId());
-        return bookingRoomDTO;
+    private BookingRoom convertToEntity(BookingRoomDTO bookingRoomDTO) {
+        BookingRoom bookingRoom = new BookingRoom();
+        bookingRoom.setId(bookingRoomDTO.getId());
+        bookingRoom.setBooking(bookingRepository.findById(bookingRoomDTO.getBookingId()).orElse(null));
+        bookingRoom.setRoom(roomRepository.findById(bookingRoomDTO.getRoomId()).orElse(null));
+        return bookingRoom;
     }
 }
