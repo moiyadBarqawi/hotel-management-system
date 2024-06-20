@@ -1,41 +1,55 @@
 package com.bzu.project.controllers;
 
-
+import com.bzu.project.assembler.PaymentStatusAssembler;
 import com.bzu.project.dto.PaymentStatusDTO;
 import com.bzu.project.service.PaymentStatusService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @RestController
-@RequestMapping("/api/payment-statuses")
+@RequestMapping(value = "/api/v1/payment-statuses", produces = MediaTypes.HAL_JSON_VALUE)
+@RequiredArgsConstructor
 public class PaymentStatusController {
 
-    @Autowired
-    private PaymentStatusService paymentStatusService;
+    private final PaymentStatusService paymentStatusService;
+    private final PaymentStatusAssembler paymentStatusAssembler;
 
     @GetMapping
-    public List<PaymentStatusDTO> getAllPaymentStatuses() {
-        return paymentStatusService.getAllPaymentStatuses();
+    public CollectionModel<EntityModel<PaymentStatusDTO>> getAllPaymentStatuses() {
+        List<PaymentStatusDTO> paymentStatuses = paymentStatusService.getAllPaymentStatuses();
+        return paymentStatusAssembler.toCollectionModel(paymentStatuses)
+                .add(linkTo(methodOn(PaymentStatusController.class).getAllPaymentStatuses()).withSelfRel());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PaymentStatusDTO> getPaymentStatusById(@PathVariable Long id) {
-        PaymentStatusDTO paymentStatusDTO = paymentStatusService.getPaymentStatusById(id);
-        return paymentStatusDTO != null ? ResponseEntity.ok(paymentStatusDTO) : ResponseEntity.notFound().build();
+    public EntityModel<PaymentStatusDTO> getPaymentStatusById(@PathVariable Long id) {
+        PaymentStatusDTO paymentStatus = paymentStatusService.getPaymentStatusById(id);
+        return paymentStatusAssembler.toModel(paymentStatus);
     }
 
     @PostMapping
-    public PaymentStatusDTO createPaymentStatus(@RequestBody PaymentStatusDTO paymentStatusDTO) {
-        return paymentStatusService.createPaymentStatus(paymentStatusDTO);
+    public ResponseEntity<EntityModel<PaymentStatusDTO>> createPaymentStatus(@RequestBody PaymentStatusDTO paymentStatusDTO) {
+        PaymentStatusDTO createdPaymentStatus = paymentStatusService.createPaymentStatus(paymentStatusDTO);
+        URI location = linkTo(methodOn(PaymentStatusController.class).getPaymentStatusById(createdPaymentStatus.getId())).toUri();
+        return ResponseEntity
+                .created(location)
+                .body(paymentStatusAssembler.toModel(createdPaymentStatus));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PaymentStatusDTO> updatePaymentStatus(@PathVariable Long id, @RequestBody PaymentStatusDTO paymentStatusDTO) {
+    public ResponseEntity<EntityModel<PaymentStatusDTO>> updatePaymentStatus(@PathVariable Long id, @RequestBody PaymentStatusDTO paymentStatusDTO) {
         PaymentStatusDTO updatedPaymentStatus = paymentStatusService.updatePaymentStatus(id, paymentStatusDTO);
-        return updatedPaymentStatus != null ? ResponseEntity.ok(updatedPaymentStatus) : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(paymentStatusAssembler.toModel(updatedPaymentStatus));
     }
 
     @DeleteMapping("/{id}")

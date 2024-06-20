@@ -1,10 +1,8 @@
 package com.bzu.project.dto;
 
-import org.springframework.hateoas.RepresentationModel;
-
 import java.util.Date;
 
-public class BookingDTO  extends RepresentationModel<BookingDTO> {
+public class BookingDTO {
     private Long id;
     private Long guestId;
     private Long paymentStatusId;
@@ -14,6 +12,7 @@ public class BookingDTO  extends RepresentationModel<BookingDTO> {
     private int numChildren;
     private double bookingAmount;
 
+    // Getters and Setters
     public Long getId() {
         return id;
     }

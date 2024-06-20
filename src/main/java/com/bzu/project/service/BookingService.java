@@ -37,6 +37,7 @@ public class BookingService {
         Booking booking = convertToEntity(bookingDTO);
         return convertToDTO(bookingRepository.save(booking));
     }
+
     public BookingDTO updateBooking(Long id, BookingDTO bookingDTO) {
         Optional<Booking> existingBooking = bookingRepository.findById(id);
         if (existingBooking.isPresent()) {
@@ -84,3 +85,4 @@ public class BookingService {
         return bookingDTO;
     }
 }
+

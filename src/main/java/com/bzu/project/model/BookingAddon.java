@@ -8,14 +8,11 @@ public class BookingAddon {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @ManyToOne
-    @MapsId("bookingId")
     @JoinColumn(name = "booking_id")
     private Booking booking;
 
     @ManyToOne
-    @MapsId("addonId")
     @JoinColumn(name = "addon_id")
     private Addon addon;
 

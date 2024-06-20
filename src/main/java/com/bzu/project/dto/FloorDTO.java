@@ -2,7 +2,7 @@ package com.bzu.project.dto;
 
 import org.springframework.hateoas.RepresentationModel;
 
-public class FloorDTO  extends RepresentationModel<FloorDTO> {
+public class FloorDTO extends RepresentationModel<FloorDTO> {
     private Long id;
     private String floorNumber;
 

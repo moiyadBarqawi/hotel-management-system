@@ -1,46 +1,58 @@
 package com.bzu.project.controllers;
 
+import com.bzu.project.assembler.BookingAddonAssembler;
 import com.bzu.project.dto.BookingAddonDTO;
 import com.bzu.project.service.BookingAddonService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @RestController
-@RequestMapping("/api/booking-addons")
+@RequestMapping(value = "/api/v1/booking-addons", produces = MediaTypes.HAL_JSON_VALUE)
+@RequiredArgsConstructor
 public class BookingAddonController {
 
-    @Autowired
-    private BookingAddonService bookingAddonService;
+    private final BookingAddonService bookingAddonService;
+    private final BookingAddonAssembler bookingAddonAssembler;
 
     @GetMapping
-    public List<BookingAddonDTO> getAllBookingAddons() {
-        return bookingAddonService.getAllBookingAddons();
+    public CollectionModel<BookingAddonDTO> getAllBookingAddons() {
+        List<BookingAddonDTO> bookingAddons = bookingAddonService.getAllBookingAddons();
+        return bookingAddonAssembler.toCollectionModel(bookingAddons)
+                .add(linkTo(methodOn(BookingAddonController.class).getAllBookingAddons()).withSelfRel());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<BookingAddonDTO> getBookingAddonById(@PathVariable Long id) {
-        BookingAddonDTO bookingAddonDTO = bookingAddonService.getBookingAddonById(id);
-        return bookingAddonDTO != null ? ResponseEntity.ok(bookingAddonDTO) : ResponseEntity.notFound().build();
+    @GetMapping("/{bookingId}/{addonId}")
+    public EntityModel<BookingAddonDTO> getBookingAddonById(@PathVariable Long bookingId, @PathVariable Long addonId) {
+        BookingAddonDTO bookingAddon = bookingAddonService.getBookingAddonById(bookingId, addonId);
+        return EntityModel.of(bookingAddonAssembler.toModel(bookingAddon));
     }
 
     @PostMapping
     public ResponseEntity<BookingAddonDTO> createBookingAddon(@RequestBody BookingAddonDTO bookingAddonDTO) {
         BookingAddonDTO createdBookingAddon = bookingAddonService.createBookingAddon(bookingAddonDTO);
-        return ResponseEntity.ok(createdBookingAddon);
+        return ResponseEntity
+                .created(linkTo(methodOn(BookingAddonController.class).getBookingAddonById(createdBookingAddon.getBookingId(), createdBookingAddon.getAddonId())).toUri())
+                .body(bookingAddonAssembler.toModel(createdBookingAddon));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<BookingAddonDTO> updateBookingAddon(@PathVariable Long id, @RequestBody BookingAddonDTO bookingAddonDTO) {
-        BookingAddonDTO updatedBookingAddon = bookingAddonService.updateBookingAddon(id, bookingAddonDTO);
-        return updatedBookingAddon != null ? ResponseEntity.ok(updatedBookingAddon) : ResponseEntity.notFound().build();
+    @PutMapping("/{bookingId}/{addonId}")
+    public ResponseEntity<BookingAddonDTO> updateBookingAddon(@PathVariable Long bookingId, @PathVariable Long addonId, @RequestBody BookingAddonDTO bookingAddonDTO) {
+        BookingAddonDTO updatedBookingAddon = bookingAddonService.updateBookingAddon(bookingId, addonId, bookingAddonDTO);
+        return ResponseEntity.ok(bookingAddonAssembler.toModel(updatedBookingAddon));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBookingAddon(@PathVariable Long id) {
-        bookingAddonService.deleteBookingAddon(id);
+    @DeleteMapping("/{bookingId}/{addonId}")
+    public ResponseEntity<Void> deleteBookingAddon(@PathVariable Long bookingId, @PathVariable Long addonId) {
+        bookingAddonService.deleteBookingAddon(bookingId, addonId);
         return ResponseEntity.noContent().build();
     }
 }

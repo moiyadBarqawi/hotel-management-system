@@ -32,8 +32,8 @@ public class BookingAddonService {
                 .collect(Collectors.toList());
     }
 
-    public BookingAddonDTO getBookingAddonById(Long id) {
-        Optional<BookingAddon> bookingAddon = bookingAddonRepository.findById(id);
+    public BookingAddonDTO getBookingAddonById(Long bookingId, Long addonId) {
+        Optional<BookingAddon> bookingAddon = bookingAddonRepository.findByBookingIdAndAddonId(bookingId, addonId);
         return bookingAddon.map(this::convertToDTO).orElse(null);
     }
 
@@ -42,8 +42,8 @@ public class BookingAddonService {
         return convertToDTO(bookingAddonRepository.save(bookingAddon));
     }
 
-    public BookingAddonDTO updateBookingAddon(Long id, BookingAddonDTO bookingAddonDTO) {
-        Optional<BookingAddon> existingBookingAddon = bookingAddonRepository.findById(id);
+    public BookingAddonDTO updateBookingAddon(Long bookingId, Long addonId, BookingAddonDTO bookingAddonDTO) {
+        Optional<BookingAddon> existingBookingAddon = bookingAddonRepository.findByBookingIdAndAddonId(bookingId, addonId);
         if (existingBookingAddon.isPresent()) {
             BookingAddon bookingAddon = existingBookingAddon.get();
             bookingAddon.setBooking(bookingRepository.findById(bookingAddonDTO.getBookingId()).orElse(null));
@@ -54,8 +54,8 @@ public class BookingAddonService {
         }
     }
 
-    public void deleteBookingAddon(Long id) {
-        bookingAddonRepository.deleteById(id);
+    public void deleteBookingAddon(Long bookingId, Long addonId) {
+        bookingAddonRepository.deleteByBookingIdAndAddonId(bookingId, addonId);
     }
 
     private BookingAddon convertToEntity(BookingAddonDTO bookingAddonDTO) {

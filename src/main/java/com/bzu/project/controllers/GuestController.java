@@ -1,7 +1,6 @@
 package com.bzu.project.controllers;
 
-
-import com.bzu.project.assembler.GuestAssembler;
+import com.bzu.project.assembler.GuestModelAssembler;
 import com.bzu.project.dto.GuestDTO;
 import com.bzu.project.service.GuestService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,9 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/guests")
@@ -24,14 +20,15 @@ public class GuestController {
     @GetMapping("/{id}")
     public ResponseEntity<GuestDTO> getGuestById(@PathVariable Long id) {
         GuestDTO guestDTO = guestService.getGuestById(id);
-        return ResponseEntity.ok(GuestAssembler.toModel(guestDTO));
+        return ResponseEntity.ok(GuestModelAssembler.toModel(guestDTO));
     }
 
     @GetMapping
-    public ResponseEntity<CollectionModel<GuestDTO>> getAllGuests() {
+    public ResponseEntity<CollectionModel<? extends GuestDTO>> getAllGuests() {
         List<GuestDTO> guests = guestService.getAllGuests();
-        return ResponseEntity.ok(GuestAssembler.toCollectionModel(guests));
+        return ResponseEntity.ok(GuestModelAssembler.toCollectionModel(guests));
     }
+
     @PostMapping
     public GuestDTO createGuest(@RequestBody GuestDTO guestDTO) {
         return guestService.createGuest(guestDTO);

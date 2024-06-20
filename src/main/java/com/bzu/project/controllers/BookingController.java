@@ -1,40 +1,51 @@
 package com.bzu.project.controllers;
 
+import com.bzu.project.assembler.BookingAssembler;
 import com.bzu.project.dto.BookingDTO;
 import com.bzu.project.service.BookingService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+
 @RestController
-@RequestMapping("/api/bookings")
+@RequestMapping(value = "/api/v1/bookings", produces = "application/hal+json")
+@RequiredArgsConstructor
 public class BookingController {
 
-    @Autowired
-    private BookingService bookingService;
+    private final BookingService bookingService;
+    private final BookingAssembler bookingAssembler;
 
     @GetMapping
-    public List<BookingDTO> getAllBookings() {
-        return bookingService.getAllBookings();
+    public CollectionModel<EntityModel<BookingDTO>> getAllBookings() {
+        List<BookingDTO> bookings = bookingService.getAllBookings();
+        return bookingAssembler.toCollectionModel(bookings)
+                .add(linkTo(methodOn(BookingController.class).getAllBookings()).withSelfRel());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BookingDTO> getBookingById(@PathVariable Long id) {
-        BookingDTO bookingDTO = bookingService.getBookingById(id);
-        return bookingDTO != null ? ResponseEntity.ok(bookingDTO) : ResponseEntity.notFound().build();
+    public EntityModel<BookingDTO> getBookingById(@PathVariable Long id) {
+        BookingDTO booking = bookingService.getBookingById(id);
+        return bookingAssembler.toModel(booking);
     }
 
     @PostMapping
-    public BookingDTO createBooking(@RequestBody BookingDTO bookingDTO) {
-        return bookingService.createBooking(bookingDTO);
+    public ResponseEntity<EntityModel<BookingDTO>> createBooking(@RequestBody BookingDTO bookingDTO) {
+        BookingDTO createdBooking = bookingService.createBooking(bookingDTO);
+        return ResponseEntity
+                .created(linkTo(methodOn(BookingController.class).getBookingById(createdBooking.getId())).toUri())
+                .body(bookingAssembler.toModel(createdBooking));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BookingDTO> updateBooking(@PathVariable Long id, @RequestBody BookingDTO bookingDTO) {
+    public ResponseEntity<EntityModel<BookingDTO>> updateBooking(@PathVariable Long id, @RequestBody BookingDTO bookingDTO) {
         BookingDTO updatedBooking = bookingService.updateBooking(id, bookingDTO);
-        return updatedBooking != null ? ResponseEntity.ok(updatedBooking) : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(bookingAssembler.toModel(updatedBooking));
     }
 
     @DeleteMapping("/{id}")
