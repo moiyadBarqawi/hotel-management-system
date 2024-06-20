@@ -24,26 +24,26 @@ public class BookingRoomAssembler extends RepresentationModelAssemblerSupport<Bo
 
     @Override
     public EntityModel<BookingRoomDTO> toModel(BookingRoom bookingRoom) {
-        BookingRoomDTO bookingRoomDTO = convertToDTO(bookingRoom);
-        return EntityModel.of(bookingRoomDTO,
+        BookingRoomDTO dto = convertToDTO(bookingRoom);
+        return EntityModel.of(dto,
                 linkTo(methodOn(BookingRoomController.class).getBookingRoomById(bookingRoom.getId())).withSelfRel(),
-                linkTo(methodOn(BookingRoomController.class).getAllBookingRooms()).withRel("booking-rooms"));
+                linkTo(methodOn(BookingRoomController.class).getAllBookingRooms(0, 10)).withRel("booking-rooms"));
     }
 
     @Override
     public CollectionModel<EntityModel<BookingRoomDTO>> toCollectionModel(Iterable<? extends BookingRoom> entities) {
-        List<EntityModel<BookingRoomDTO>> bookingRoomDTOs = StreamSupport.stream(entities.spliterator(), false)
+        List<EntityModel<BookingRoomDTO>> dtos = StreamSupport.stream(entities.spliterator(), false)
                 .map(this::toModel)
                 .collect(Collectors.toList());
-        return CollectionModel.of(bookingRoomDTOs,
-                linkTo(methodOn(BookingRoomController.class).getAllBookingRooms()).withSelfRel());
+        return CollectionModel.of(dtos,
+                linkTo(methodOn(BookingRoomController.class).getAllBookingRooms(0, 10)).withSelfRel());
     }
 
     private BookingRoomDTO convertToDTO(BookingRoom bookingRoom) {
-        BookingRoomDTO bookingRoomDTO = new BookingRoomDTO();
-        bookingRoomDTO.setId(bookingRoom.getId());
-        bookingRoomDTO.setBookingId(bookingRoom.getBooking().getId());
-        bookingRoomDTO.setRoomId(bookingRoom.getRoom().getId());
-        return bookingRoomDTO;
+        BookingRoomDTO dto = new BookingRoomDTO();
+        dto.setId(bookingRoom.getId());
+        dto.setBookingId(bookingRoom.getBooking().getId());
+        dto.setRoomId(bookingRoom.getRoom().getId());
+        return dto;
     }
 }

@@ -17,37 +17,29 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 @Component
 public class PaymentStatusAssembler implements RepresentationModelAssembler<PaymentStatus, EntityModel<PaymentStatusDTO>> {
 
-    public EntityModel<PaymentStatusDTO> toModel(PaymentStatusDTO paymentStatus) {
-        PaymentStatusDTO paymentStatusDTO = convertToDTO(paymentStatus);
+    @Override
+    public EntityModel<PaymentStatusDTO> toModel(PaymentStatus entity) {
+        PaymentStatusDTO paymentStatusDTO = convertToDTO(entity);
 
         return EntityModel.of(paymentStatusDTO,
                 linkTo(methodOn(PaymentStatusController.class).getPaymentStatusById(paymentStatusDTO.getId())).withSelfRel(),
-                linkTo(methodOn(PaymentStatusController.class).getAllPaymentStatuses()).withRel("payment-statuses"));
+                linkTo(methodOn(PaymentStatusController.class).getAllPaymentStatuses(0, 10)).withRel("payment-statuses"));
     }
 
-    public CollectionModel<EntityModel<PaymentStatusDTO>> toCollectionModel(List<PaymentStatusDTO> entities) {
+    @Override
+    public CollectionModel<EntityModel<PaymentStatusDTO>> toCollectionModel(Iterable<? extends PaymentStatus> entities) {
         List<EntityModel<PaymentStatusDTO>> paymentStatusDTOs = StreamSupport.stream(entities.spliterator(), false)
                 .map(this::toModel)
                 .collect(Collectors.toList());
 
         return CollectionModel.of(paymentStatusDTOs,
-                linkTo(methodOn(PaymentStatusController.class).getAllPaymentStatuses()).withSelfRel());
+                linkTo(methodOn(PaymentStatusController.class).getAllPaymentStatuses(0, 10)).withSelfRel());
     }
 
-    private PaymentStatusDTO convertToDTO(PaymentStatusDTO paymentStatus) {
+    private PaymentStatusDTO convertToDTO(PaymentStatus paymentStatus) {
         PaymentStatusDTO paymentStatusDTO = new PaymentStatusDTO();
         paymentStatusDTO.setId(paymentStatus.getId());
         paymentStatusDTO.setPaymentStatusName(paymentStatus.getPaymentStatusName());
         return paymentStatusDTO;
-    }
-
-    @Override
-    public EntityModel<PaymentStatusDTO> toModel(PaymentStatus entity) {
-        return null;
-    }
-
-    @Override
-    public CollectionModel<EntityModel<PaymentStatusDTO>> toCollectionModel(Iterable<? extends PaymentStatus> entities) {
-        return RepresentationModelAssembler.super.toCollectionModel(entities);
     }
 }

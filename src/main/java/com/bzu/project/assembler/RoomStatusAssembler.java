@@ -32,6 +32,11 @@ public class RoomStatusAssembler extends RepresentationModelAssemblerSupport<Roo
     }
 
     @Override
+    protected EntityModel<RoomStatusDTO> instantiateModel(RoomStatus entity) {
+        return super.instantiateModel(entity);
+    }
+
+    @Override
     public CollectionModel<EntityModel<RoomStatusDTO>> toCollectionModel(Iterable<? extends RoomStatus> entities) {
         List<EntityModel<RoomStatusDTO>> roomStatusDTOs = StreamSupport.stream(entities.spliterator(), false)
                 .map(this::toModel)
@@ -41,25 +46,10 @@ public class RoomStatusAssembler extends RepresentationModelAssemblerSupport<Roo
                 linkTo(methodOn(RoomStatusController.class).getAllRoomStatuses()).withSelfRel());
     }
 
-    private static RoomStatusDTO convertToDTO(RoomStatus roomStatus) {
+    private RoomStatusDTO convertToDTO(RoomStatus roomStatus) {
         RoomStatusDTO roomStatusDTO = new RoomStatusDTO();
         roomStatusDTO.setId(roomStatus.getId());
         roomStatusDTO.setStatusName(roomStatus.getStatusName());
         return roomStatusDTO;
-    }
-
-    public CollectionModel<EntityModel<RoomStatusDTO>> toCollectionModel(List<RoomStatusDTO> dtos) {
-        List<EntityModel<RoomStatusDTO>> roomStatusDTOs = dtos.stream()
-                .map(this::toModel)
-                .collect(Collectors.toList());
-
-        return CollectionModel.of(roomStatusDTOs,
-                linkTo(methodOn(RoomStatusController.class).getAllRoomStatuses()).withSelfRel());
-    }
-
-    public EntityModel<RoomStatusDTO> toModel(RoomStatusDTO roomStatusDTO) {
-        return EntityModel.of(roomStatusDTO,
-                linkTo(methodOn(RoomStatusController.class).getRoomStatusById(roomStatusDTO.getId())).withSelfRel(),
-                linkTo(methodOn(RoomStatusController.class).getAllRoomStatuses()).withRel("room-statuses"));
     }
 }

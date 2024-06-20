@@ -1,6 +1,7 @@
 package com.bzu.project.service;
 
 import com.bzu.project.dto.RoomClassBedTypeDTO;
+import com.bzu.project.exception.ResourceNotFoundException;
 import com.bzu.project.model.BedType;
 import com.bzu.project.model.RoomClass;
 import com.bzu.project.model.RoomClassBedType;
@@ -33,8 +34,9 @@ public class RoomClassBedTypeService {
     }
 
     public RoomClassBedTypeDTO getRoomClassBedTypeById(Long roomClassId, Long bedTypeId) {
-        Optional<RoomClassBedType> roomClassBedType = roomClassBedTypeRepository.findByRoomClassIdAndBedTypeId(roomClassId, bedTypeId);
-        return roomClassBedType.map(this::convertToDTO).orElse(null);
+        RoomClassBedType roomClassBedType = roomClassBedTypeRepository.findByRoomClassIdAndBedTypeId(roomClassId, bedTypeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room class bed type not found with roomClassId " + roomClassId + " and bedTypeId " + bedTypeId));
+        return convertToDTO(roomClassBedType);
     }
 
     public RoomClassBedTypeDTO createRoomClassBedType(RoomClassBedTypeDTO roomClassBedTypeDTO) {
@@ -43,20 +45,26 @@ public class RoomClassBedTypeService {
     }
 
     public RoomClassBedTypeDTO updateRoomClassBedType(Long roomClassId, Long bedTypeId, RoomClassBedTypeDTO roomClassBedTypeDTO) {
-        Optional<RoomClassBedType> existingRoomClassBedType = roomClassBedTypeRepository.findByRoomClassIdAndBedTypeId(roomClassId, bedTypeId);
-        if (existingRoomClassBedType.isPresent()) {
-            RoomClassBedType roomClassBedType = existingRoomClassBedType.get();
-            roomClassBedType.setRoomClass(roomClassRepository.findById(roomClassBedTypeDTO.getRoomClassId()).orElse(null));
-            roomClassBedType.setBedType(bedTypeRepository.findById(roomClassBedTypeDTO.getBedTypeId()).orElse(null));
-            roomClassBedType.setNumBeds(roomClassBedTypeDTO.getNumBeds());
-            return convertToDTO(roomClassBedTypeRepository.save(roomClassBedType));
-        } else {
-            return null;
-        }
+        RoomClassBedType roomClassBedType = roomClassBedTypeRepository.findByRoomClassIdAndBedTypeId(roomClassId, bedTypeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room class bed type not found with roomClassId " + roomClassId + " and bedTypeId " + bedTypeId));
+        roomClassBedType.setRoomClass(roomClassRepository.findById(roomClassBedTypeDTO.getRoomClassId()).orElse(null));
+        roomClassBedType.setBedType(bedTypeRepository.findById(roomClassBedTypeDTO.getBedTypeId()).orElse(null));
+        roomClassBedType.setNumBeds(roomClassBedTypeDTO.getNumBeds());
+        return convertToDTO(roomClassBedTypeRepository.save(roomClassBedType));
     }
 
     public void deleteRoomClassBedType(Long roomClassId, Long bedTypeId) {
-        roomClassBedTypeRepository.deleteByRoomClassIdAndBedTypeId(roomClassId, bedTypeId);
+        RoomClassBedType roomClassBedType = roomClassBedTypeRepository.findByRoomClassIdAndBedTypeId(roomClassId, bedTypeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room class bed type not found with roomClassId " + roomClassId + " and bedTypeId " + bedTypeId));
+        roomClassBedTypeRepository.delete(roomClassBedType);
+    }
+
+    public RoomClassBedType convertToEntity(RoomClassBedTypeDTO roomClassBedTypeDTO) {
+        RoomClassBedType roomClassBedType = new RoomClassBedType();
+        roomClassBedType.setRoomClass(roomClassRepository.findById(roomClassBedTypeDTO.getRoomClassId()).orElse(null));
+        roomClassBedType.setBedType(bedTypeRepository.findById(roomClassBedTypeDTO.getBedTypeId()).orElse(null));
+        roomClassBedType.setNumBeds(roomClassBedTypeDTO.getNumBeds());
+        return roomClassBedType;
     }
 
     private RoomClassBedTypeDTO convertToDTO(RoomClassBedType roomClassBedType) {
@@ -65,13 +73,5 @@ public class RoomClassBedTypeService {
         roomClassBedTypeDTO.setBedTypeId(roomClassBedType.getBedType().getId());
         roomClassBedTypeDTO.setNumBeds(roomClassBedType.getNumBeds());
         return roomClassBedTypeDTO;
-    }
-
-    private RoomClassBedType convertToEntity(RoomClassBedTypeDTO roomClassBedTypeDTO) {
-        RoomClassBedType roomClassBedType = new RoomClassBedType();
-        roomClassBedType.setRoomClass(roomClassRepository.findById(roomClassBedTypeDTO.getRoomClassId()).orElse(null));
-        roomClassBedType.setBedType(bedTypeRepository.findById(roomClassBedTypeDTO.getBedTypeId()).orElse(null));
-        roomClassBedType.setNumBeds(roomClassBedTypeDTO.getNumBeds());
-        return roomClassBedType;
     }
 }

@@ -21,10 +21,9 @@ public class FloorAssembler implements RepresentationModelAssembler<Floor, Entit
     @Override
     public EntityModel<FloorDTO> toModel(Floor floor) {
         FloorDTO floorDTO = convertToDto(floor);
-
         return EntityModel.of(floorDTO,
                 linkTo(methodOn(FloorController.class).getFloorById(floorDTO.getId())).withSelfRel(),
-                linkTo(methodOn(FloorController.class).getAllFloors()).withRel("floors"));
+                linkTo(methodOn(FloorController.class).getAllFloors(0, 10)).withRel("floors"));
     }
 
     @Override
@@ -34,7 +33,7 @@ public class FloorAssembler implements RepresentationModelAssembler<Floor, Entit
                 .collect(Collectors.toList());
 
         return CollectionModel.of(floorDTOs,
-                linkTo(methodOn(FloorController.class).getAllFloors()).withSelfRel());
+                linkTo(methodOn(FloorController.class).getAllFloors(0, 10)).withSelfRel());
     }
 
     private FloorDTO convertToDto(Floor floor) {
@@ -44,18 +43,18 @@ public class FloorAssembler implements RepresentationModelAssembler<Floor, Entit
         return floorDTO;
     }
 
-    public CollectionModel<EntityModel<FloorDTO>> toCollectionModel(List<FloorDTO> dtos) {
+    public EntityModel<FloorDTO> toDTO(FloorDTO floorDTO) {
+        return EntityModel.of(floorDTO,
+                linkTo(methodOn(FloorController.class).getFloorById(floorDTO.getId())).withSelfRel(),
+                linkTo(methodOn(FloorController.class).getAllFloors(0, 10)).withRel("floors"));
+    }
+
+    public CollectionModel<EntityModel<FloorDTO>> toDTOCollection(List<FloorDTO> dtos) {
         List<EntityModel<FloorDTO>> floorDTOs = dtos.stream()
-                .map(this::toModel)
+                .map(this::toDTO)
                 .collect(Collectors.toList());
 
         return CollectionModel.of(floorDTOs,
-                linkTo(methodOn(FloorController.class).getAllFloors()).withSelfRel());
-    }
-
-    public EntityModel<FloorDTO> toModel(FloorDTO floorDTO) {
-        return EntityModel.of(floorDTO,
-                linkTo(methodOn(FloorController.class).getFloorById(floorDTO.getId())).withSelfRel(),
-                linkTo(methodOn(FloorController.class).getAllFloors()).withRel("floors"));
+                linkTo(methodOn(FloorController.class).getAllFloors(0, 10)).withSelfRel());
     }
 }

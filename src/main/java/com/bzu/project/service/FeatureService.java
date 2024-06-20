@@ -1,14 +1,15 @@
 package com.bzu.project.service;
 
 import com.bzu.project.dto.FeatureDTO;
+import com.bzu.project.exception.ResourceNotFoundException;
 import com.bzu.project.model.Feature;
 import com.bzu.project.repository.FeatureRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class FeatureService {
@@ -16,15 +17,15 @@ public class FeatureService {
     @Autowired
     private FeatureRepository featureRepository;
 
-    public List<FeatureDTO> getAllFeatures() {
-        return featureRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<FeatureDTO> getAllFeatures(PageRequest pageRequest) {
+        Page<Feature> features = featureRepository.findAll(pageRequest);
+        return features.map(this::convertToDTO);
     }
 
     public FeatureDTO getFeatureById(Long id) {
-        Optional<Feature> feature = featureRepository.findById(id);
-        return feature.map(this::convertToDTO).orElse(null);
+        Feature feature = featureRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Feature not found with id " + id));
+        return convertToDTO(feature);
     }
 
     public FeatureDTO createFeature(FeatureDTO featureDTO) {
@@ -33,14 +34,10 @@ public class FeatureService {
     }
 
     public FeatureDTO updateFeature(Long id, FeatureDTO featureDTO) {
-        Optional<Feature> existingFeature = featureRepository.findById(id);
-        if (existingFeature.isPresent()) {
-            Feature feature = existingFeature.get();
-            feature.setFeatureName(featureDTO.getFeatureName());
-            return convertToDTO(featureRepository.save(feature));
-        } else {
-            return null;
-        }
+        Feature feature = featureRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Feature not found with id " + id));
+        feature.setFeatureName(featureDTO.getFeatureName());
+        return convertToDTO(featureRepository.save(feature));
     }
 
     public void deleteFeature(Long id) {

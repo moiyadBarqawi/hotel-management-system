@@ -1,6 +1,7 @@
 package com.bzu.project.service;
 
 import com.bzu.project.dto.RoomClassFeatureDTO;
+import com.bzu.project.exception.ResourceNotFoundException;
 import com.bzu.project.model.RoomClassFeature;
 import com.bzu.project.repository.RoomClassFeatureRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,28 +24,28 @@ public class RoomClassFeatureService {
 
     public RoomClassFeatureDTO getRoomClassFeatureById(Long roomClassId, Long featureId) {
         RoomClassFeature roomClassFeature = roomClassFeatureRepository.findByRoomClassIdAndFeatureId(roomClassId, featureId)
-                .orElseThrow(() -> new RuntimeException("RoomClassFeature not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("RoomClassFeature not found with roomClassId " + roomClassId + " and featureId " + featureId));
         return convertToDTO(roomClassFeature);
     }
 
     public RoomClassFeatureDTO createRoomClassFeature(RoomClassFeatureDTO roomClassFeatureDTO) {
         RoomClassFeature roomClassFeature = convertToEntity(roomClassFeatureDTO);
-        roomClassFeature = roomClassFeatureRepository.save(roomClassFeature);
-        return convertToDTO(roomClassFeature);
+        return convertToDTO(roomClassFeatureRepository.save(roomClassFeature));
     }
 
     public RoomClassFeatureDTO updateRoomClassFeature(Long roomClassId, Long featureId, RoomClassFeatureDTO roomClassFeatureDTO) {
         RoomClassFeature existingRoomClassFeature = roomClassFeatureRepository.findByRoomClassIdAndFeatureId(roomClassId, featureId)
-                .orElseThrow(() -> new RuntimeException("RoomClassFeature not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("RoomClassFeature not found with roomClassId " + roomClassId + " and featureId " + featureId));
         // Update fields as needed
         existingRoomClassFeature.setRoomClass(roomClassFeatureDTO.getRoomClass());
         existingRoomClassFeature.setFeature(roomClassFeatureDTO.getFeature());
-        existingRoomClassFeature = roomClassFeatureRepository.save(existingRoomClassFeature);
-        return convertToDTO(existingRoomClassFeature);
+        return convertToDTO(roomClassFeatureRepository.save(existingRoomClassFeature));
     }
 
     public void deleteRoomClassFeature(Long roomClassId, Long featureId) {
-        roomClassFeatureRepository.deleteByRoomClassIdAndFeatureId(roomClassId, featureId);
+        RoomClassFeature roomClassFeature = roomClassFeatureRepository.findByRoomClassIdAndFeatureId(roomClassId, featureId)
+                .orElseThrow(() -> new ResourceNotFoundException("RoomClassFeature not found with roomClassId " + roomClassId + " and featureId " + featureId));
+        roomClassFeatureRepository.delete(roomClassFeature);
     }
 
     private RoomClassFeatureDTO convertToDTO(RoomClassFeature roomClassFeature) {
@@ -56,7 +57,7 @@ public class RoomClassFeatureService {
         return dto;
     }
 
-    private RoomClassFeature convertToEntity(RoomClassFeatureDTO roomClassFeatureDTO) {
+    public RoomClassFeature convertToEntity(RoomClassFeatureDTO roomClassFeatureDTO) {
         RoomClassFeature roomClassFeature = new RoomClassFeature();
         roomClassFeature.setRoomClass(roomClassFeatureDTO.getRoomClass());
         roomClassFeature.setFeature(roomClassFeatureDTO.getFeature());

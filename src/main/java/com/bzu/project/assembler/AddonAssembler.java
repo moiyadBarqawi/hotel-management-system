@@ -17,7 +17,11 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Component
 public class AddonAssembler extends RepresentationModelAssemblerSupport<Addon, EntityModel<AddonDTO>> {
-//testing commit
+
+    // Default paging parameters
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_SIZE = 10;
+
     public AddonAssembler() {
         super(AddonController.class, (Class<EntityModel<AddonDTO>>) (Class<?>) EntityModel.class);
     }
@@ -27,10 +31,11 @@ public class AddonAssembler extends RepresentationModelAssemblerSupport<Addon, E
         AddonDTO addonDTO = new AddonDTO();
         addonDTO.setId(addon.getId());
         addonDTO.setAddonName(addon.getAddonName());
-        addonDTO.setPrice(addon.getPrice()); // Ensure this matches the field name in Addon model
+        addonDTO.setPrice(addon.getPrice());
+
         return EntityModel.of(addonDTO,
                 linkTo(methodOn(AddonController.class).getAddonById(addon.getId())).withSelfRel(),
-                linkTo(methodOn(AddonController.class).getAllAddons()).withRel("addons"));
+                linkTo(methodOn(AddonController.class).getAllAddons(DEFAULT_PAGE, DEFAULT_SIZE)).withRel("addons"));
     }
 
     @Override
@@ -38,7 +43,8 @@ public class AddonAssembler extends RepresentationModelAssemblerSupport<Addon, E
         List<EntityModel<AddonDTO>> addonDTOs = StreamSupport.stream(entities.spliterator(), false)
                 .map(this::toModel)
                 .collect(Collectors.toList());
+
         return CollectionModel.of(addonDTOs,
-                linkTo(methodOn(AddonController.class).getAllAddons()).withSelfRel());
+                linkTo(methodOn(AddonController.class).getAllAddons(DEFAULT_PAGE, DEFAULT_SIZE)).withSelfRel());
     }
 }

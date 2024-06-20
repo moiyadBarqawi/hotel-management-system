@@ -2,6 +2,7 @@ package com.bzu.project.controllers;
 
 import com.bzu.project.assembler.RoomStatusAssembler;
 import com.bzu.project.dto.RoomStatusDTO;
+import com.bzu.project.model.RoomStatus;
 import com.bzu.project.service.RoomStatusService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -27,13 +29,18 @@ public class RoomStatusController {
     @GetMapping
     public CollectionModel<EntityModel<RoomStatusDTO>> getAllRoomStatuses() {
         List<RoomStatusDTO> roomStatuses = roomStatusService.getAllRoomStatuses();
-        return roomStatusAssembler.toCollectionModel(roomStatuses);
+        List<RoomStatus> roomStatusEntities = roomStatuses.stream()
+                .map(dto -> roomStatusService.convertToEntity(dto))
+                .collect(Collectors.toList());
+        return roomStatusAssembler.toCollectionModel(roomStatusEntities)
+                .add(linkTo(methodOn(RoomStatusController.class).getAllRoomStatuses()).withSelfRel());
     }
 
     @GetMapping("/{id}")
     public EntityModel<RoomStatusDTO> getRoomStatusById(@PathVariable Long id) {
         RoomStatusDTO roomStatus = roomStatusService.getRoomStatusById(id);
-        return roomStatusAssembler.toModel(roomStatus);
+        RoomStatus roomStatusEntity = roomStatusService.convertToEntity(roomStatus);
+        return roomStatusAssembler.toModel(roomStatusEntity);
     }
 
     @PostMapping
@@ -42,7 +49,8 @@ public class RoomStatusController {
 
         RoomStatusDTO createdRoomStatus = roomStatusService.createRoomStatus(roomStatusDTO);
         URI location = linkTo(methodOn(RoomStatusController.class).getRoomStatusById(createdRoomStatus.getId())).toUri();
-        return ResponseEntity.created(location).body(roomStatusAssembler.toModel(createdRoomStatus));
+        RoomStatus roomStatusEntity = roomStatusService.convertToEntity(createdRoomStatus);
+        return ResponseEntity.created(location).body(roomStatusAssembler.toModel(roomStatusEntity));
     }
 
     @PutMapping("/{id}")
@@ -50,7 +58,8 @@ public class RoomStatusController {
         validateRoomStatusDTO(roomStatusDTO); // Add validation logic as needed
 
         RoomStatusDTO updatedRoomStatus = roomStatusService.updateRoomStatus(id, roomStatusDTO);
-        return ResponseEntity.ok(roomStatusAssembler.toModel(updatedRoomStatus));
+        RoomStatus roomStatusEntity = roomStatusService.convertToEntity(updatedRoomStatus);
+        return ResponseEntity.ok(roomStatusAssembler.toModel(roomStatusEntity));
     }
 
     @DeleteMapping("/{id}")

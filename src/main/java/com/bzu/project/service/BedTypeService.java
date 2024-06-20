@@ -1,14 +1,15 @@
 package com.bzu.project.service;
 
 import com.bzu.project.dto.BedTypeDTO;
+import com.bzu.project.exception.ResourceNotFoundException;
 import com.bzu.project.model.BedType;
 import com.bzu.project.repository.BedTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class BedTypeService {
@@ -16,35 +17,35 @@ public class BedTypeService {
     @Autowired
     private BedTypeRepository bedTypeRepository;
 
-    public List<BedTypeDTO> getAllBedTypes() {
-        return bedTypeRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<BedTypeDTO> getAllBedTypes(PageRequest pageRequest) {
+        Page<BedType> bedTypes = bedTypeRepository.findAll(pageRequest);
+        return bedTypes.map(this::convertToDTO);
     }
 
     public BedTypeDTO getBedTypeById(Long id) {
-        Optional<BedType> bedType = bedTypeRepository.findById(id);
-        return bedType.map(this::convertToDTO).orElse(null);
+        BedType bedType = bedTypeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("BedType not found with id " + id));
+        return convertToDTO(bedType);
     }
 
     public BedTypeDTO createBedType(BedTypeDTO bedTypeDTO) {
         BedType bedType = convertToEntity(bedTypeDTO);
-        return convertToDTO(bedTypeRepository.save(bedType));
+        BedType savedBedType = bedTypeRepository.save(bedType);
+        return convertToDTO(savedBedType);
     }
 
     public BedTypeDTO updateBedType(Long id, BedTypeDTO bedTypeDTO) {
-        Optional<BedType> existingBedType = bedTypeRepository.findById(id);
-        if (existingBedType.isPresent()) {
-            BedType bedType = existingBedType.get();
-            bedType.setBedTypeName(bedTypeDTO.getBedTypeName());
-            return convertToDTO(bedTypeRepository.save(bedType));
-        } else {
-            return null;
-        }
+        BedType bedType = bedTypeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("BedType not found with id " + id));
+        bedType.setBedTypeName(bedTypeDTO.getBedTypeName());
+        BedType updatedBedType = bedTypeRepository.save(bedType);
+        return convertToDTO(updatedBedType);
     }
 
     public void deleteBedType(Long id) {
-        bedTypeRepository.deleteById(id);
+        BedType bedType = bedTypeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("BedType not found with id " + id));
+        bedTypeRepository.delete(bedType);
     }
 
     private BedTypeDTO convertToDTO(BedType bedType) {

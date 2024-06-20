@@ -1,16 +1,17 @@
 package com.bzu.project.service;
 
 import com.bzu.project.dto.BookingDTO;
+import com.bzu.project.exception.ResourceNotFoundException;
 import com.bzu.project.model.Booking;
 import com.bzu.project.repository.BookingRepository;
 import com.bzu.project.repository.GuestRepository;
 import com.bzu.project.repository.PaymentStatusRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
@@ -24,13 +25,20 @@ public class BookingService {
     @Autowired
     private PaymentStatusRepository paymentStatusRepository;
 
-    public List<BookingDTO> getAllBookings() {
-        return bookingRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<BookingDTO> getAllBookings(PageRequest pageRequest) {
+        Page<Booking> bookings = bookingRepository.findAll(pageRequest);
+        return bookings.map(this::convertToDTO);
     }
 
     public BookingDTO getBookingById(Long id) {
-        Optional<Booking> booking = bookingRepository.findById(id);
-        return booking.map(this::convertToDTO).orElse(null);
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id " + id));
+        return convertToDTO(booking);
+    }
+
+    public Booking getBookingByIdAsEntity(Long id) {
+        return bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id " + id));
     }
 
     public BookingDTO createBooking(BookingDTO bookingDTO) {
@@ -39,20 +47,18 @@ public class BookingService {
     }
 
     public BookingDTO updateBooking(Long id, BookingDTO bookingDTO) {
-        Optional<Booking> existingBooking = bookingRepository.findById(id);
-        if (existingBooking.isPresent()) {
-            Booking booking = existingBooking.get();
-            booking.setGuest(guestRepository.findById(bookingDTO.getGuestId()).orElse(null));
-            booking.setPaymentStatus(paymentStatusRepository.findById(bookingDTO.getPaymentStatusId()).orElse(null));
-            booking.setCheckinDate(bookingDTO.getCheckinDate());
-            booking.setCheckoutDate(bookingDTO.getCheckoutDate());
-            booking.setNumAdults(bookingDTO.getNumAdults());
-            booking.setNumChildren(bookingDTO.getNumChildren());
-            booking.setBookingAmount(bookingDTO.getBookingAmount());
-            return convertToDTO(bookingRepository.save(booking));
-        } else {
-            return null;
-        }
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id " + id));
+
+        booking.setGuest(guestRepository.findById(bookingDTO.getGuestId()).orElse(null));
+        booking.setPaymentStatus(paymentStatusRepository.findById(bookingDTO.getPaymentStatusId()).orElse(null));
+        booking.setCheckinDate(bookingDTO.getCheckinDate());
+        booking.setCheckoutDate(bookingDTO.getCheckoutDate());
+        booking.setNumAdults(bookingDTO.getNumAdults());
+        booking.setNumChildren(bookingDTO.getNumChildren());
+        booking.setBookingAmount(bookingDTO.getBookingAmount());
+
+        return convertToDTO(bookingRepository.save(booking));
     }
 
     public void deleteBooking(Long id) {
@@ -85,4 +91,3 @@ public class BookingService {
         return bookingDTO;
     }
 }
-

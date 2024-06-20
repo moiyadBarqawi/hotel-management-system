@@ -3,6 +3,7 @@ package com.bzu.project.service;
 import com.bzu.project.dto.RoomStatusDTO;
 import com.bzu.project.model.RoomStatus;
 import com.bzu.project.repository.RoomStatusRepository;
+import com.bzu.project.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,8 +22,9 @@ public class RoomStatusService {
     }
 
     public RoomStatusDTO getRoomStatusById(Long id) {
-        Optional<RoomStatus> roomStatus = roomStatusRepository.findById(id);
-        return roomStatus.map(this::convertToDTO).orElse(null);
+        RoomStatus roomStatus = roomStatusRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room status not found with id " + id));
+        return convertToDTO(roomStatus);
     }
 
     public RoomStatusDTO createRoomStatus(RoomStatusDTO roomStatusDTO) {
@@ -31,21 +33,19 @@ public class RoomStatusService {
     }
 
     public RoomStatusDTO updateRoomStatus(Long id, RoomStatusDTO roomStatusDTO) {
-        Optional<RoomStatus> existingRoomStatus = roomStatusRepository.findById(id);
-        if (existingRoomStatus.isPresent()) {
-            RoomStatus roomStatus = existingRoomStatus.get();
-            roomStatus.setStatusName(roomStatusDTO.getStatusName());
-            return convertToDTO(roomStatusRepository.save(roomStatus));
-        } else {
-            return null;
-        }
+        RoomStatus roomStatus = roomStatusRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room status not found with id " + id));
+        roomStatus.setStatusName(roomStatusDTO.getStatusName());
+        return convertToDTO(roomStatusRepository.save(roomStatus));
     }
 
     public void deleteRoomStatus(Long id) {
-        roomStatusRepository.deleteById(id);
+        RoomStatus roomStatus = roomStatusRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room status not found with id " + id));
+        roomStatusRepository.delete(roomStatus);
     }
 
-    private RoomStatus convertToEntity(RoomStatusDTO roomStatusDTO) {
+    public RoomStatus convertToEntity(RoomStatusDTO roomStatusDTO) {
         RoomStatus roomStatus = new RoomStatus();
         roomStatus.setId(roomStatusDTO.getId());
         roomStatus.setStatusName(roomStatusDTO.getStatusName());
