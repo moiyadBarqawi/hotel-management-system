@@ -17,7 +17,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Component
 public class AddonAssembler extends RepresentationModelAssemblerSupport<Addon, EntityModel<AddonDTO>> {
-
+//testing commit
     public AddonAssembler() {
         super(AddonController.class, (Class<EntityModel<AddonDTO>>) (Class<?>) EntityModel.class);
     }
